@@ -23,12 +23,12 @@ import android.os.IBinder
 import android.support.v4.app.ActivityCompat
 import android.support.v4.content.ContextCompat
 import android.util.Log
+import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.MediaController.MediaPlayerControl
 import com.gustavomendez.lab6_musicplayer.Controllers.MusicController
-
-
+import kotlinx.android.synthetic.main.toolbar.*
 
 
 class MainActivity : AppCompatActivity(), MediaPlayerControl {
@@ -44,13 +44,32 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
     private var playIntent: Intent? = null
     private var musicBound = false
     private lateinit var controller: MusicController
-    private val paused = false
-    private val playbackPaused = false
+    private var paused = false
+    private var playbackPaused = true
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        // Set the toolbar as support action bar
+        setSupportActionBar(toolbar)
+
+        // Now get the support action bar
+        val actionBar = supportActionBar
+
+        // Set toolbar title/app title
+        actionBar!!.title = "PlayerApp"
+
+        // Set action bar/toolbar sub title
+        actionBar.subtitle = "Music Player"
+
+        // Set action bar elevation
+        actionBar.elevation = 4.0F
+
+        // Display the app icon in action bar/toolbar
+        actionBar.setDisplayShowHomeEnabled(true)
+        actionBar.setDisplayUseLogoEnabled(true)
 
         setupPermissions()
         songList = ArrayList()
@@ -68,6 +87,11 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
                 //Get a callback with the song info
                 musicSrv!!.setSong(songList.indexOf(song))
                 musicSrv!!.playSong()
+                if(playbackPaused){
+                    setController()
+                    playbackPaused = false
+                }
+                controller.show(0)
 
                 /*val intent = Intent(this, ContactInfoActivity::class.java)
                     intent.putExtra(SAVED_CONTACT_ID, contact._id)
@@ -81,6 +105,13 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
 
         setController()
 
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        // Inflate the menu to use in the action bar
+        val inflater = menuInflater
+        inflater.inflate(R.menu.menu, menu)
+        return super.onCreateOptionsMenu(menu)
     }
 
     //connect to the service
@@ -125,6 +156,24 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
         return super.onOptionsItemSelected(item)
     }
 
+    override fun onPause() {
+        super.onPause()
+        paused = true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if(paused){
+            setController()
+            paused = false
+        }
+    }
+
+    override fun onStop() {
+        controller.hide()
+        super.onStop()
+    }
+
     override fun onDestroy() {
         stopService(playIntent)
         musicSrv=null
@@ -142,15 +191,25 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
         controller.isEnabled = true
     }
 
+
+
     //play next
     private fun playNext() {
         musicSrv!!.playNext()
+        if(playbackPaused){
+            setController()
+            playbackPaused = false
+        }
         controller.show(0)
     }
 
     //play previous
     private fun playPrev() {
         musicSrv!!.playPrev()
+        if(playbackPaused){
+            setController()
+            playbackPaused=false
+        }
         controller.show(0)
     }
 
@@ -171,7 +230,7 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
     }
 
 
-    fun getSongList(){
+    private fun getSongList(){
         val musicResolver = contentResolver
         val musicUri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         val musicCursor = musicResolver.query(musicUri, null, null, null, null)
@@ -211,7 +270,7 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
     override fun isPlaying(): Boolean {
         if(musicSrv!=null && musicBound)
             return musicSrv!!.isPng()
-        return false;
+        return false
     }
 
     override fun canSeekForward(): Boolean {
@@ -219,17 +278,19 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
     }
 
     override fun getDuration(): Int {
-        if(musicSrv!=null && musicBound && musicSrv!!.isPng())
-            return musicSrv!!.getDur()
-        else return 0
+        return if(musicSrv!=null && musicBound && musicSrv!!.isPng())
+            musicSrv!!.getDur()
+        else 0
     }
 
     override fun pause() {
+        playbackPaused=true
         musicSrv!!.pausePlayer()
+        //controller.show()
     }
 
     override fun getBufferPercentage(): Int {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return 0
     }
 
     override fun seekTo(pos: Int) {
@@ -248,10 +309,11 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
 
     override fun start() {
         musicSrv!!.go()
+        controller.show()
     }
 
     override fun getAudioSessionId(): Int {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return musicSrv!!.getAudioSession()
     }
 
     override fun canPause(): Boolean {

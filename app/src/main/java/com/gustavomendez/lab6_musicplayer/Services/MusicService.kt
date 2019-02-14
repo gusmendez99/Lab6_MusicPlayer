@@ -61,7 +61,7 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.OnEr
         shuffle = !shuffle
     }
 
-    fun initMusicPlayer() {
+    private fun initMusicPlayer() {
         //set player properties
         player = MediaPlayer().apply {
             setAudioStreamType(AudioManager.STREAM_MUSIC)
@@ -155,6 +155,8 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.OnEr
 
     fun setSong(songIndex: Int) {
         songPosn = songIndex
+        //seek(0)
+
     }
 
     fun playPrev(){
@@ -204,15 +206,23 @@ class MusicService : Service(), MediaPlayer.OnPreparedListener, MediaPlayer.OnEr
     }
 
     override fun onError(mp: MediaPlayer?, what: Int, extra: Int): Boolean {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        mp!!.reset()
+        return false
     }
 
     override fun onCompletion(mp: MediaPlayer?) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        if(player.currentPosition == 0){
+            mp!!.reset()
+            playNext()
+        }
     }
 
     override fun onDestroy() {
         stopForeground(true)
+    }
+
+    fun getAudioSession(): Int {
+        return player.audioSessionId
     }
 
 }
