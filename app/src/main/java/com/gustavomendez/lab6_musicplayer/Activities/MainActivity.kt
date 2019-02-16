@@ -5,14 +5,8 @@ import android.content.*
 import android.content.pm.PackageManager
 import android.support.v7.app.AppCompatActivity
 import android.os.Bundle
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import android.net.Uri;
-import android.database.Cursor;
-import android.os.Binder
+import java.util.ArrayList
 import android.support.v7.widget.LinearLayoutManager
-import android.widget.ListView;
 import com.gustavomendez.lab6_musicplayer.Adapters.SongAdapter
 import com.gustavomendez.lab6_musicplayer.R
 import com.gustavomendez.lab6_musicplayer.Models.Song
@@ -26,24 +20,28 @@ import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.MediaController
 import android.widget.MediaController.MediaPlayerControl
-import com.gustavomendez.lab6_musicplayer.Controllers.MusicController
+//import com.gustavomendez.lab6_musicplayer.Controllers.MusicController
 import kotlinx.android.synthetic.main.toolbar.*
 
 
 class MainActivity : AppCompatActivity(), MediaPlayerControl {
 
-
+    //Request permission for external write
     companion object {
         private const val EXTERNAL_WRITE_REQUEST_CODE = 112
     }
 
+    //Properties
     private lateinit var songList: ArrayList<Song>
     private lateinit var adapter:SongAdapter
+
+    //Music Player properties
     private var musicSrv: MusicService? = null
     private var playIntent: Intent? = null
     private var musicBound = false
-    private lateinit var controller: MusicController
+    private lateinit var controller: MediaController
     private var paused = false
     private var playbackPaused = true
 
@@ -86,11 +84,12 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
 
                 //Get a callback with the song info
                 musicSrv!!.setSong(songList.indexOf(song))
-                musicSrv!!.playSong()
+
                 if(playbackPaused){
                     setController()
                     playbackPaused = false
                 }
+                musicSrv!!.playSong()
                 controller.show(0)
 
                 /*val intent = Intent(this, ContactInfoActivity::class.java)
@@ -114,7 +113,9 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
         return super.onCreateOptionsMenu(menu)
     }
 
-    //connect to the service
+    /**
+     * Connect to the music service
+     */
     private val musicConnection = object : ServiceConnection {
 
         override fun onServiceConnected(name: ComponentName, service: IBinder) {
@@ -142,8 +143,6 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
 
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         when (item!!.itemId) {
-            R.id.action_shuffle -> {
-            }
             R.id.action_end -> {
                 stopService(playIntent)
                 musicSrv = null
@@ -182,28 +181,30 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
 
     private fun setController() {
         //set the controller up
-        controller = MusicController(this)
+        controller = MediaController(this)
 
         controller.setPrevNextListeners(View.OnClickListener { playNext() }, View.OnClickListener { playPrev() })
-
         controller.setMediaPlayer(this)
         controller.setAnchorView(recycler_songs)
         controller.isEnabled = true
     }
 
-
-
-    //play next
+    /**
+     * Playing the next song
+     */
     private fun playNext() {
         musicSrv!!.playNext()
         if(playbackPaused){
+            //setting the controller
             setController()
             playbackPaused = false
         }
         controller.show(0)
     }
 
-    //play previous
+    /**
+     * Play the prev song
+     */
     private fun playPrev() {
         musicSrv!!.playPrev()
         if(playbackPaused){
@@ -213,23 +214,31 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
         controller.show(0)
     }
 
+    /**
+     * For realtime permissions
+     */
     private fun setupPermissions() {
         val permission = ContextCompat.checkSelfPermission(this,
             Manifest.permission.WRITE_EXTERNAL_STORAGE)
 
         if (permission != PackageManager.PERMISSION_GRANTED) {
-            Log.i("SaveContactActivity", "Permission to write declined")
+            Log.i("MainActivity", "Permission to write declined")
             makeRequest()
         }
     }
 
+    /**
+     * For realtime permissions
+     */
     private fun makeRequest() {
         ActivityCompat.requestPermissions(this,
             arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
             EXTERNAL_WRITE_REQUEST_CODE)
     }
 
-
+    /**
+     * Getting the song list from internal storage
+     */
     private fun getSongList(){
         val musicResolver = contentResolver
         val musicUri = android.provider.MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
@@ -252,7 +261,7 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
     }
 
     /**
-     * Method to accept/decline permission on real time
+     * Method to accept/decline realtime permission
      */
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         when (requestCode) {
@@ -288,6 +297,7 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
         musicSrv!!.pausePlayer()
         //controller.show()
     }
+
 
     override fun getBufferPercentage(): Int {
         return 0

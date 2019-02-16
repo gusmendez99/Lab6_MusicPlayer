@@ -9,11 +9,14 @@ import com.gustavomendez.lab6_musicplayer.Models.Song
 import com.gustavomendez.lab6_musicplayer.R
 import kotlinx.android.synthetic.main.song.view.*
 
+/**
+ * Song adapter to fill MainActivity RecyclerView
+ */
 class SongAdapter(
     private val items : ArrayList<Song>, private val context: Context,
     private val listener: (Song) -> Unit) : RecyclerView.Adapter<SongAdapter.ViewHolder>() {
 
-    // Gets the number of contatcs in the list
+    // Gets the number of songs in the list
     override fun getItemCount(): Int {
         return items.size
     }
@@ -37,7 +40,6 @@ class SongAdapter(
 
             //Listener return false if there's a single click
             setOnClickListener { listener(song) }
-            //Listener return true if there's a long click
 
         }
     }
