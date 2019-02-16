@@ -72,7 +72,16 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
         setupPermissions()
         songList = ArrayList()
 
-        getSongList()
+        val permission = ContextCompat.checkSelfPermission(this,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE)
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            Log.i("MainActivity", "Permission to write declined")
+            //makeRequest()
+        } else {
+            getSongList()
+        }
+
 
         songList.sortedWith(compareBy { it.songTitle })
 
@@ -232,7 +241,7 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
      */
     private fun makeRequest() {
         ActivityCompat.requestPermissions(this,
-            arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE),
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
             EXTERNAL_WRITE_REQUEST_CODE)
     }
 
@@ -270,6 +279,8 @@ class MainActivity : AppCompatActivity(), MediaPlayerControl {
                     Log.i("MainActivity", "Permission has been denied by user")
                 } else {
                     Log.i("MainActivity", "Permission has been granted by user")
+                    getSongList()
+                    adapter.notifyDataSetChanged()
                 }
             }
         }
